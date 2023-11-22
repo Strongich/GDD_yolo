@@ -1,0 +1,25 @@
+version: '3'
+services:
+  streamlit-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DOCKER_MODE=1
+    command: ["streamlit", "run", "src/ui.py"]
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - NVIDIA_VISIBLE_DEVICE=all
+    command: ["python3", "src/inference.py"]

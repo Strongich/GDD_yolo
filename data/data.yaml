@@ -1,0 +1,5 @@
+train: ../data/train/images
+val: ../data/valid/images
+test: ../data/test/images
+nc: 5
+names: ['Open Eye','Closed Eye','Cigarette','Phone','Seatbelt']
