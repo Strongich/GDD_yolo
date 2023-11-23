@@ -38,6 +38,7 @@ Where:
 * Max function used for specific situation, when the only thing on frames will be just phone, so the trust level won't be negative. Indeed, this situation is not practical, so if our trust level is equal to zero, this is an indicator that there are technical problems with video. \
 This GIF represents some part of trip and how detector works:
 ![presentation](presentation.gif)
+
 The output trust level of this driver during whole 6 minutes ride is <b>82.59%</b>, which we consider as high score.
 ![Alt text](presentation_score.png)
 ### Problems
