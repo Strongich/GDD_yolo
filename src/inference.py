@@ -13,7 +13,7 @@ import ast
 os.makedirs("uploads", exist_ok=True)
 
 app=FastAPI()
-model = YOLO('./runs/detect/yolov8n_15e4/weights/best.pt')
+model = YOLO('./runs/detect/train/weights/best.pt')
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
@@ -61,11 +61,9 @@ async def detect_images(file: UploadFile = File(...)):
     try:
         image = Image.open(io.BytesIO(file.file.read()))
 
-        # Ensure that the model and visualize_detection functions return valid results
         results = model(image, conf=0.45)
         if results is None:
             raise HTTPException(status_code=500, detail='Error processing image')
-
         img = visualize_detection(image, results[0].boxes.data.tolist())
         if img is None:
             raise HTTPException(status_code=500, detail='Error visualizing detection')
@@ -73,7 +71,6 @@ async def detect_images(file: UploadFile = File(...)):
         img_byte_arr = io.BytesIO()
         img.save(img_byte_arr, format='JPEG')
         img_byte_arr = img_byte_arr.getvalue()
-
         return StreamingResponse(io.BytesIO(img_byte_arr), media_type='image/jpeg')
 
     except Exception as e:
@@ -96,8 +93,7 @@ async def detect_videos_endpoint(file: UploadFile = File(...)):
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
 
-    # Create a video writer for the output video
-    fourcc = cv2.VideoWriter_fourcc(*'VP80')
+    fourcc = cv2.VideoWriter_fourcc(*'VP90')
     output_path = './uploads/output.webm'
     out = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height))
     output_classes = []
@@ -106,17 +102,13 @@ async def detect_videos_endpoint(file: UploadFile = File(...)):
         if not ret:
             break
 
-        # Convert the frame to PIL Image
         image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
 
-        # Run inference on the frame using the model
         results = model(image, conf=0.45)
 
-        # Get the bounding boxes from the results
         bboxes = results[0].boxes.data.tolist()
 
         class_names = ['Open Eye','Closed Eye','Cigarette','Phone','Seatbelt']
-        # Draw bounding boxes on the frame
         for bbox in bboxes:
             x_min, y_min, x_max, y_max, prob_class, class_id = bbox
             color = (0, 0, 255)
@@ -132,13 +124,10 @@ async def detect_videos_endpoint(file: UploadFile = File(...)):
                           (int(x_min) + text_size[0], int(y_min)), color, cv2.FILLED)
             cv2.putText(frame, label, (int(x_min), int(y_min)), font, font_scale, (255, 255, 255), font_thickness)
 
-        # Write the frame with bounding boxes to the output video
         out.write(frame)
 
-    # Release the video capture and writer
     cap.release()
     out.release()
-    # Return the output video file
     with open(output_path, 'rb') as video:
         video_data = video.read()
 
@@ -172,8 +161,6 @@ async def good_driver_endpoint():
     elif trust_lvl>=70:
         color='green'
     return trust_lvl, color
-
-    
 
 
 if __name__ == "__main__":
